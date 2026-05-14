@@ -2,6 +2,7 @@ package jp.co.metateam.library.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional; // ★追加が必要
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,7 @@ import jp.co.metateam.library.model.BookMstDto;
 import jp.co.metateam.library.repository.BookMstRepository;
 
 @Service
-@SuppressWarnings("unused") // 使っていないインポート（OptionalやRedirectAttributesなど）の黄色い線を消します
+@SuppressWarnings("unused")
 public class BookMstService {
 
     private final BookMstRepository bookMstRepository;
@@ -44,18 +45,21 @@ public class BookMstService {
     }
 
     /**
-     * 書籍登録（バリデーションなし・DB保存のみ）
+     * ★ここを修正：ISBN（String）で重複を確認する
+     */
+    public boolean existsByIsbn(String isbn) {
+        // existsById は数字(Long)用なので、findByIsbn を使う
+        return this.bookMstRepository.findByIsbn(isbn).isPresent();
+    }
+
+    /**
+     * 書籍登録
      */
     @Transactional
     public void save(BookMstDto bookMstDto) {
-        // 保存用のエンティティを作成
         BookMst bookMst = new BookMst();
-
-        // 画面（Dto）から送られてきた値をセット
         bookMst.setTitle(bookMstDto.getTitle());
         bookMst.setIsbn(bookMstDto.getIsbn());
-
-        // リポジトリ経由でDBに保存
         this.bookMstRepository.save(bookMst);
     }
 }

@@ -8,12 +8,10 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.validation.Valid;
-import jp.co.metateam.library.model.BookMst;
 import jp.co.metateam.library.model.BookMstDto;
 import jp.co.metateam.library.service.BookMstService;
 import lombok.extern.log4j.Log4j2;
@@ -21,15 +19,14 @@ import lombok.extern.log4j.Log4j2;
 /**
  * 書籍関連クラス
  */
-@Log4j2 
+@Log4j2
 @Controller
-@SuppressWarnings("unused")
 public class BookController {
 
     private final BookMstService bookMstService;
 
     @Autowired
-    public BookController(BookMstService bookMstService){
+    public BookController(BookMstService bookMstService) {
         this.bookMstService = bookMstService;
     }
 
@@ -59,14 +56,12 @@ public class BookController {
      */
     @PostMapping("/book/add")
     public String addBook(
-        @ModelAttribute @Valid BookMstDto bookMstDto, 
-        BindingResult result, 
-        RedirectAttributes redirectAttributes, 
-        Model model
-    ) {
-        // 1. DTO側で設定したバリデーション（必須、文字数、数字形式）に引っかかった場合
+            @ModelAttribute @Valid BookMstDto bookMstDto,
+            BindingResult result,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+        // 1. 入力チェック（必須入力など）
         if (result.hasErrors()) {
-            // ★追加：HTMLの ${errTitle} や ${errISBN} にメッセージを詰め替える
             if (result.hasFieldErrors("title")) {
                 model.addAttribute("errTitle", result.getFieldError("title").getDefaultMessage());
             }
@@ -76,15 +71,23 @@ public class BookController {
             return "book/add";
         }
 
+        // 2. 保存処理
         try {
-            // 2. 保存処理
+            // ★ここが書き換えポイント：保存前に自分で重複をチェックする
+            if (this.bookMstService.existsByIsbn(bookMstDto.getIsbn())) {
+                model.addAttribute("errISBN", "登録済みのISBNです");
+                return "book/add";
+            }
+
+            // 重複がなければ保存
             this.bookMstService.save(bookMstDto);
             redirectAttributes.addFlashAttribute("message", "書籍を登録しました");
             return "redirect:index";
 
         } catch (Exception e) {
-            // 3. 重複チェック（DB照合）などの例外エラー
-            model.addAttribute("errISBN", "登録済みのISBNです");
+            // 3. その他、予期せぬシステムエラー用のキャッチ
+            log.error("システムエラー: ", e);
+            model.addAttribute("error", "システムエラーが発生しました");
             return "book/add";
         }
     }
