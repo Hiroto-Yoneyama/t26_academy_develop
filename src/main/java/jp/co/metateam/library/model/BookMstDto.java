@@ -22,7 +22,7 @@ public class BookMstDto implements Serializable {
 
     // --- ISBNのルール ---
     @NotBlank(message = "ISBNは必須です")
-    @Size(max = 50, message = "ISBNは50文字以下で入力してください")
+    @Size(max = 13, message = "ISBNは13文字以下で入力してください")
     @Pattern(regexp = "^[0-9]*$", message = "ISBNは半角数字で設定してください")
     private String isbn;
 
